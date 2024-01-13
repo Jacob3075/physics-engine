@@ -6,7 +6,7 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-bevy = { version = "0.12.1", features = ["dynamic_linking"] }
+bevy = { version = "0.12.1"}
 
 [workspace]
 resolver = "2" # Important! wgpu/Bevy needs this!
@@ -22,3 +22,11 @@ opt-level = 3
 [target.x86_64-unknown-linux-gnu]
 linker = "clang"
 rustflags = ["-C", "link-arg=-fuse-ld=/usr/bin/mold"]
+
+[target.x86_64-pc-windows-gnu]
+linker = "lld"
+rustflags = [
+    "-Lnative=/home/jacob/.xwin/crt/lib/x86_64",
+    "-Lnative=/home/jacob/.xwin/sdk/lib/um/x86_64",
+    "-Lnative=/home/jacob/.xwin/sdk/lib/ucrt/x86_64"
+]
