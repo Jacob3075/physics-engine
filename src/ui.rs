@@ -1,3 +1,5 @@
+use bevy::core_pipeline::bloom::{BloomCompositeMode, BloomSettings};
+use bevy::core_pipeline::tonemapping::Tonemapping;
 use bevy::prelude::*;
 use bevy::window::PrimaryWindow;
 
@@ -37,7 +39,22 @@ pub fn cursor_coords_system(
 }
 
 pub fn setup_ui(mut commands: Commands) {
-    commands.spawn((Camera2dBundle::default(), MainCamera));
+    commands.spawn((
+        Camera2dBundle {
+            camera: Camera {
+                hdr: true, // 1. HDR is required for bloom
+                ..default()
+            },
+            tonemapping: Tonemapping::TonyMcMapface, // 2. Using a tonemapper that desaturates to white is recommended
+            ..default()
+        },
+        BloomSettings {
+            intensity: 0.4,
+            ..default()
+        },
+        MainCamera,
+    ));
+
     commands.spawn((
         TextBundle::from_sections([
             TextSection::new(
