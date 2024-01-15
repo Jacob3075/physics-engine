@@ -1,4 +1,4 @@
-use bevy::core_pipeline::bloom::{BloomCompositeMode, BloomSettings};
+use bevy::core_pipeline::bloom::BloomSettings;
 use bevy::core_pipeline::tonemapping::Tonemapping;
 use bevy::prelude::*;
 use bevy::window::PrimaryWindow;
