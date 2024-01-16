@@ -41,20 +41,19 @@ pub fn cursor_coords_system(
 pub fn setup_ui(mut commands: Commands) {
     commands.spawn((
         Camera2dBundle {
-            camera: Camera {
-                hdr: true, // 1. HDR is required for bloom
-                ..default()
-            },
-            tonemapping: Tonemapping::TonyMcMapface, // 2. Using a tonemapper that desaturates to white is recommended
+            camera: Camera { ..default() },
+            // tonemapping: Tonemapping::TonyMcMapface, // 2. Using a tonemapper that desaturates to white is recommended
             ..default()
         },
-        BloomSettings {
-            intensity: 0.4,
-            ..default()
-        },
+        // BloomSettings {
+        //     intensity: 0.4,
+        //     ..default()
+        // },
         MainCamera,
     ));
+}
 
+pub fn setup_text(mut commands: Commands) {
     commands.spawn((
         TextBundle::from_sections([
             TextSection::new(
