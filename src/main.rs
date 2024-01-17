@@ -2,7 +2,7 @@ use bevy::prelude::*;
 use bevy::sprite::MaterialMesh2dBundle;
 use rand::random;
 
-use crate::components::Ball;
+use crate::components::{Body, Sphere};
 use crate::ui::{setup_ui, CursorCoords};
 
 mod components;
@@ -34,75 +34,89 @@ fn setup(
     mut materials: ResMut<Assets<ColorMaterial>>,
 ) {
     for _ in 0..10 {
-        let color = Color::rgb(random(), random(), random());
         let radius = (random::<f32>() * 40.) + 10.;
-        commands.spawn((
-            MaterialMesh2dBundle {
-                mesh: meshes.add(shape::Circle::new(radius).into()).into(),
-                material: materials.add(ColorMaterial::from(color)),
-                transform: Transform::from_translation(Vec3::new(
-                    random::<f32>() * 500.,
-                    random::<f32>() * 500.,
-                    0.,
-                )),
-                ..default()
-            },
-            Ball {
+        let position = Vec2::new(random::<f32>() * 500., random::<f32>() * 500.);
+        commands.spawn(create_ball(
+            &mut meshes,
+            &mut materials,
+            Body {
                 velocity: Vec2::new(random::<f32>() * 100., random::<f32>() * 100.),
                 mass: radius,
-                radius,
+                restitution: 1.,
+                position,
             },
+            Sphere { radius },
         ));
     }
 }
 
+fn create_ball(
+    mut meshes: &mut ResMut<Assets<Mesh>>,
+    mut materials: &mut ResMut<Assets<ColorMaterial>>,
+    body: Body,
+    sphere: Sphere,
+) -> (MaterialMesh2dBundle<ColorMaterial>, Body, Sphere) {
+    let color = Color::rgb(random(), random(), random());
+    return (
+        MaterialMesh2dBundle {
+            mesh: meshes.add(shape::Circle::new(sphere.radius).into()).into(),
+            material: materials.add(ColorMaterial::from(color)),
+            transform: Transform::from_translation(Vec3::from((body.position, 0.))),
+            ..default()
+        },
+        body,
+        sphere,
+    );
+}
+
 const GRAVITY: Vec2 = Vec2::new(0., -9.81);
 
-fn gravity_system(mut query: Query<(&mut Transform, &mut Ball)>, time: Res<Time>) {
-    for (mut transform, mut ball) in query.iter_mut() {
-        let ball_mass = ball.mass;
+fn gravity_system(mut query: Query<(&mut Transform, &mut Body)>, time: Res<Time>) {
+    for (mut transform, mut body) in query.iter_mut() {
+        let ball_mass = body.mass;
         let force = ball_mass * GRAVITY * 50.;
 
-        let velocity = ball.velocity + (force / ball_mass) * time.delta_seconds();
-        let position = transform.translation.xy() + velocity * time.delta_seconds();
-        ball.velocity = velocity;
+        let velocity = body.velocity + (force / ball_mass) * time.delta_seconds();
+        body.position = transform.translation.xy() + velocity * time.delta_seconds();
+        body.velocity = velocity;
 
-        transform.translation.x = position.x;
-        transform.translation.y = position.y;
+        transform.translation.x = body.position.x;
+        transform.translation.y = body.position.y;
     }
 }
 
 fn boundary_collision_system(
-    mut query: Query<(&mut Transform, &mut Ball)>,
+    mut query: Query<(&mut Transform, &mut Sphere, &mut Body)>,
     window_q: Query<&Window>,
 ) {
     let window = window_q.single();
-    for (mut transform, mut ball) in query.iter_mut() {
+    for (mut transform, mut ball, mut body) in query.iter_mut() {
         let position = transform.translation.xy();
         let window_height = (window.height() / 2.) - ball.radius;
         let window_width = (window.width() / 2.) - ball.radius;
+        let restitution = body.restitution;
 
         // bottom of screen
         if position.y < -window_height {
-            ball.velocity.y = -ball.velocity.y * 0.8;
+            body.velocity.y = -body.velocity.y * restitution;
             transform.translation.y = -window_height;
         }
 
         // top
         if position.y > window_height {
-            ball.velocity.y = -ball.velocity.y * 0.8;
+            body.velocity.y = -body.velocity.y * restitution;
             transform.translation.y = window_height;
         }
 
         // left
         if position.x < -window_width {
-            ball.velocity.x = -ball.velocity.x * 0.8;
+            body.velocity.x = -body.velocity.x * restitution;
             transform.translation.x = -window_width;
         }
 
         // right
         if position.x > window_width {
-            ball.velocity.x = -ball.velocity.x * 0.8;
+            body.velocity.x = -body.velocity.x * restitution;
             transform.translation.x = window_width;
         }
     }
